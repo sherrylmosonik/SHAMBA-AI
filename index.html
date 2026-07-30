@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Shamba AI — Prototype</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root{
+  --soil:#5C3A21;
+  --soil-dark:#3B2414;
+  --crop:#2F5233;
+  --crop-light:#7A9B5C;
+  --sun:#E0A836;
+  --cream:#F5F0E1;
+  --paper:#FBF8F0;
+  --ink:#241E15;
+  --ink-soft:#6B5D4B;
+  --mpesa:#00A651;
+  --line:#DCD3BC;
+  --sky:#DCE8DE;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:32px 16px;
+  background:
+    radial-gradient(ellipse at 30% -10%, #4A6B3A 0%, transparent 55%),
+    linear-gradient(180deg, var(--soil-dark) 0%, var(--soil) 40%, #7A5C3E 100%);
+  font-family:'IBM Plex Sans', sans-serif;
+  color:var(--ink);
+}
+.field-rows{
+  position:fixed; inset:0; z-index:0; opacity:.35;
+  background:repeating-linear-gradient(100deg, transparent 0 26px, rgba(122,155,92,.5) 26px 30px);
+  mask-image:linear-gradient(180deg, transparent, black 70%);
+}
+.wrap{position:relative; z-index:1; text-align:center;}
+.brandline{
+  font-family:'IBM Plex Mono', monospace;
+  color:var(--sun);
+  letter-spacing:.14em;
+  font-size:11px;
+  text-transform:uppercase;
+  margin-bottom:14px;
+  opacity:.85;
+}
+.phone{
+  width:360px;
+  height:740px;
+  background:var(--paper);
+  border-radius:42px;
+  border:10px solid #1D1712;
+  box-shadow:0 30px 70px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.04);
+  overflow:hidden;
+  position:relative;
+}
+.notch{
+  position:absolute; top:10px; left:50%; transform:translateX(-50%);
+  width:120px; height:22px; background:#1D1712; border-radius:14px; z-index:50;
+}
+.statusbar{
+  height:40px; display:flex; align-items:center; justify-content:space-between;
+  padding:0 22px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft);
+}
+.screens{
+  position:absolute; top:40px; left:0; right:0; bottom:76px; overflow:hidden;
+}
+.screen{
+  position:absolute; inset:0; padding:18px 20px 20px;
+  overflow-y:auto;
+  transform:translateX(12px); opacity:0; pointer-events:none;
+  transition:opacity .28s ease, transform .28s ease;
+}
+.screen.active{ transform:translateX(0); opacity:1; pointer-events:auto; }
+
+h1,h2,h3{ font-family:'Fraunces', serif; margin:0; color:var(--crop); }
+.header{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+.backbtn{
+  width:32px; height:32px; border-radius:50%; border:1px solid var(--line);
+  background:var(--paper); display:flex; align-items:center; justify-content:center;
+  cursor:pointer; font-size:15px; color:var(--soil); flex:none;
+}
+.eyebrow{ font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); }
+
+/* ---- Splash ---- */
+.splash{ display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center; }
+.leafmark{ font-size:46px; margin-bottom:4px; }
+.splash h1{ font-size:34px; }
+.splash p{ color:var(--ink-soft); font-size:13px; max-width:230px; margin:8px 0 30px; line-height:1.5; }
+.tagline{ font-style:italic; color:var(--crop); font-size:14px; margin-bottom:26px; }
+.slogan{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--sun); background:var(--soil-dark); padding:6px 14px; border-radius:20px; margin:6px 0 14px; }
+
+/* ---- Buttons ---- */
+.btn{
+  display:block; width:100%; padding:14px; border-radius:14px; border:none;
+  font-family:'IBM Plex Sans',sans-serif; font-weight:600; font-size:14.5px;
+  cursor:pointer; text-align:center;
+}
+.btn-primary{ background:var(--crop); color:var(--paper); }
+.btn-primary:active{ transform:scale(.98); }
+.btn-ghost{ background:transparent; border:1.5px solid var(--crop); color:var(--crop); }
+.btn-mpesa{ background:var(--mpesa); color:#fff; display:flex; align-items:center; justify-content:center; gap:8px; }
+
+/* ---- Cards ---- */
+.card{ background:var(--cream); border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:14px; }
+.card-title{ font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; margin-bottom:8px; }
+
+/* ---- Map / measuring ---- */
+.map-wrap{ border-radius:16px; overflow:hidden; border:1px solid var(--line); position:relative; }
+.map-svg{ width:100%; display:block; background:
+  repeating-linear-gradient(115deg,#6E8B52 0 22px,#63804A 22px 44px);
+}
+.map-hint{ position:absolute; bottom:10px; left:10px; right:10px; background:rgba(36,30,21,.78); color:#fff; font-size:11.5px; padding:8px 10px; border-radius:10px; line-height:1.4; }
+.pointdot{ fill:var(--sun); stroke:#241E15; stroke-width:1.5; }
+.boundary-line{ stroke:#F5F0E1; stroke-width:2.5; fill:rgba(224,168,54,.22); stroke-dasharray:5 4; }
+.readout{
+  font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--crop);
+  display:flex; justify-content:space-between; margin-top:10px;
+}
+.big-acres{ font-family:'IBM Plex Mono',monospace; font-size:40px; color:var(--crop); font-weight:600; }
+.unit{ font-size:15px; color:var(--ink-soft); font-weight:400; margin-left:4px;}
+
+/* ---- Rows ---- */
+.row{ display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--line); font-size:13.5px;}
+.row:last-child{ border-bottom:none; }
+.row .label{ color:var(--ink-soft); }
+.row .value{ font-family:'IBM Plex Mono',monospace; font-weight:600; }
+
+/* ---- Rate slider ---- */
+input[type=range]{ width:100%; accent-color:var(--crop); }
+
+/* ---- Bottom nav ---- */
+.bottomnav{
+  position:absolute; bottom:0; left:0; right:0; height:76px;
+  display:flex; background:var(--paper); border-top:1px solid var(--line);
+}
+.navbtn{
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:4px; font-size:10.5px; color:var(--ink-soft); cursor:pointer; font-family:'IBM Plex Sans',sans-serif;
+  border:none; background:none;
+}
+.navbtn.active{ color:var(--crop); font-weight:600; }
+.navicon{ font-size:18px; }
+
+/* ---- Empty state ---- */
+.empty{ text-align:center; padding:50px 10px; color:var(--ink-soft); }
+.empty .glyph{ font-size:30px; margin-bottom:10px; display:block; }
+
+/* ---- Insights bars ---- */
+.bar-row{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.bar-label{ width:64px; font-size:11px; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; }
+.bar-track{ flex:1; height:14px; background:var(--line); border-radius:7px; overflow:hidden; }
+.bar-fill{ height:100%; background:var(--crop-light); border-radius:7px; }
+.bar-val{ width:56px; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:11px; }
+
+.mpesa-input{
+  width:100%; padding:11px 12px; border-radius:10px; border:1.5px solid var(--line);
+  font-family:'IBM Plex Mono',monospace; font-size:15px; color:var(--ink); background:var(--paper);
+}
+.mpesa-input:focus{ outline:none; border-color:var(--mpesa); }
+.mpesa-input.invalid{ border-color:#B5442E; }
+
+/* ---- Spinner ---- */
+.spinner{ width:44px; height:44px; border-radius:50%; border:4px solid var(--line); border-top-color:var(--mpesa); animation:spin 0.9s linear infinite; margin:24px auto; }
+@keyframes spin{ to{ transform:rotate(360deg);} }
+
+.record-item{ display:flex; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--line); font-size:12.5px;}
+.record-item:last-child{border-bottom:none;}
+.chip{ display:inline-block; padding:2px 8px; border-radius:20px; background:var(--sky); color:var(--crop); font-size:10px; font-family:'IBM Plex Mono',monospace; }
+
+.phone[data-theme="dark"]{
+  --paper:#1E271A;
+  --cream:#28331F;
+  --ink:#F1EEE1;
+  --ink-soft:#AAA98D;
+  --line:#3C4632;
+  --crop:#93C97D;
+  --crop-light:#B6DE9E;
+  --sky:#2E3A28;
+}
+.theme-toggle-btn{
+  border:none; background:none; cursor:pointer; font-size:13px; padding:0; line-height:1;
+  color:var(--ink-soft);
+}
+.statusbar-right{ display:flex; align-items:center; gap:10px; }
+
+.bottomnav.hidden{ display:none; }
+
+.center-note{ text-align:center; font-size:12px; color:var(--ink-soft); margin-top:6px; }
+</style>
+</head>
+<body>
+<div class="field-rows"></div>
+<div class="wrap">
+  <div class="brandline">Shamba AI — clickable prototype</div>
+  <div class="phone" id="phone-frame" data-theme="light">
+    <div class="notch"></div>
+    <div class="statusbar">
+      <span id="clock">09:41</span>
+      <div class="statusbar-right">
+        <button class="theme-toggle-btn" id="theme-toggle" onclick="toggleTheme()" title="Switch theme">🌙</button>
+        <span>●●● 82%</span>
+      </div>
+    </div>
+
+    <div class="screens">
+
+      <!-- SPLASH -->
+      <div class="screen active" data-screen="splash">
+        <div class="splash">
+          <div class="leafmark">🌿</div>
+          <h1>Shamba AI</h1>
+          <div class="slogan">Measure. Estimate. Farm Smarter.</div>
+          <div class="tagline">"Know your acres. Know your cost.<br>Before the tractor comes."</div>
+          <p>AI-powered land measurement &amp; ploughing cost calculator for Kenyan farmers.</p>
+          <button class="btn btn-primary" style="width:220px" onclick="go('login')">Ingia / Get Started</button>
+        </div>
+      </div>
+
+      <!-- LOGIN -->
+      <div class="screen" data-screen="login">
+        <div class="header"><h3 style="font-size:19px;">Welcome</h3></div>
+        <div class="eyebrow" style="margin-bottom:16px;">Log in or create your account to continue</div>
+        <div class="card">
+          <div class="card-title">Phone Number</div>
+          <input type="tel" id="login-phone" class="mpesa-input" placeholder="e.g. 0711 677 623" inputmode="tel">
+          <div style="height:10px"></div>
+          <div class="card-title">PIN</div>
+          <input type="password" id="login-pin" class="mpesa-input" placeholder="4-digit PIN" maxlength="4" inputmode="numeric">
+          <div class="center-note" id="login-error" style="text-align:left; color:#B5442E; display:none; margin-top:8px;">Enter your phone number and a 4-digit PIN.</div>
+        </div>
+        <button class="btn btn-primary" onclick="handleLogin()">Continue</button>
+        <div class="center-note" style="margin-top:10px;">New here? Just enter your number and a PIN — we'll set up your account.</div>
+      </div>
+
+      <!-- ONBOARDING -->
+      <div class="screen" data-screen="onboarding">
+        <div class="header"><h3 style="font-size:17px;">Tell us about your farm</h3></div>
+        <div class="card">
+          <div class="card-title">Full Name</div>
+          <input type="text" id="ob-name" class="mpesa-input" placeholder="e.g. John Kamau">
+          <div style="height:10px"></div>
+          <div class="card-title">County</div>
+          <select id="ob-county" class="mpesa-input">
+            <option>Kirinyaga</option><option>Nakuru</option><option>Uasin Gishu</option>
+            <option>Meru</option><option>Bungoma</option><option>Trans Nzoia</option><option>Other</option>
+          </select>
+          <div style="height:10px"></div>
+          <div class="card-title">Nearest Town / Ward</div>
+          <input type="text" id="ob-town" class="mpesa-input" placeholder="e.g. Kutus">
+          <div style="height:10px"></div>
+          <div class="card-title">Farm Name (optional)</div>
+          <input type="text" id="ob-farmname" class="mpesa-input" placeholder="e.g. Kamau Family Farm">
+          <div style="height:10px"></div>
+          <div class="card-title">Your Rough Size Estimate</div>
+          <input type="text" id="ob-sizeguess" class="mpesa-input" placeholder="e.g. ~2 acres">
+        </div>
+        <button class="btn btn-primary" onclick="saveOnboarding()">Save &amp; Continue</button>
+      </div>
+
+      <!-- EDIT PROFILE -->
+      <div class="screen" data-screen="edit-profile">
+        <div class="header">
+          <div class="backbtn" onclick="go(state.editReturnTo || 'profile')">←</div>
+          <h3 style="font-size:16px;">Edit My Details</h3>
+        </div>
+        <div class="card">
+          <div class="card-title">Full Name</div>
+          <input type="text" id="ep-name" class="mpesa-input" placeholder="e.g. John Kamau">
+          <div style="height:10px"></div>
+          <div class="card-title">Phone Number</div>
+          <input type="tel" id="ep-phone" class="mpesa-input" inputmode="tel" placeholder="e.g. 0711 677 623">
+          <div style="height:10px"></div>
+          <div class="card-title">County</div>
+          <select id="ep-county" class="mpesa-input">
+            <option>Kirinyaga</option><option>Nakuru</option><option>Uasin Gishu</option>
+            <option>Meru</option><option>Bungoma</option><option>Trans Nzoia</option><option>Other</option>
+          </select>
+          <div style="height:10px"></div>
+          <div class="card-title">Nearest Town / Ward</div>
+          <input type="text" id="ep-town" class="mpesa-input" placeholder="e.g. Kutus">
+          <div style="height:10px"></div>
+          <div class="card-title">Farm Name</div>
+          <input type="text" id="ep-farmname" class="mpesa-input" placeholder="e.g. Kamau Family Farm">
+          <div style="height:10px"></div>
+          <div class="card-title">Your Rough Size Estimate</div>
+          <input type="text" id="ep-sizeguess" class="mpesa-input" placeholder="e.g. ~2 acres">
+        </div>
+        <button class="btn btn-primary" onclick="saveEditProfile()">Save Changes</button>
+      </div>
+
+      <!-- HOME DASHBOARD -->
+      <div class="screen" data-screen="home">
+        <div class="header">
+          <span style="font-size:20px;">🌿</span>
+          <h3 style="font-size:17px;">ShambaAI</h3>
+        </div>
+        <div class="eyebrow" id="home-location">Kirinyaga County, Kenya · <em style="font-style:italic; color:var(--crop);">Measure. Estimate. Farm Smarter.</em></div>
+        <div id="home-farmname" class="eyebrow" style="margin-top:2px;"></div>
+        <div style="text-align:right; margin:-4px 0 10px;">
+          <span style="font-size:11px; color:var(--crop); cursor:pointer;" onclick="openEditProfile('home')">✎ Edit my details</span>
+        </div>
+
+        <div id="home-empty" class="card empty">
+          <span class="glyph">📍</span>
+          No farm measured yet.<br>Walk your boundary and get an instant ploughing quote.
+          <div style="height:14px"></div>
+          <button class="btn btn-primary" onclick="go('measure')">Measure My Farm</button>
+        </div>
+
+        <div id="home-filled" style="display:none">
+          <div class="card">
+            <div class="card-title">Farm Map · Updated just now</div>
+            <div class="map-wrap"><svg id="mini-map" class="map-svg" viewBox="0 0 320 200" height="140"></svg></div>
+            <div class="readout">
+              <span>Area</span><span id="mini-area">— acres</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Estimated Ploughing Cost</div>
+            <div class="big-acres" id="home-cost">KSh —</div>
+            <div class="center-note" id="home-cost-note" style="text-align:left; margin-top:6px;"></div>
+          </div>
+
+          <div class="card" style="display:flex; gap:10px;">
+            <div style="flex:1;">
+              <div class="card-title">Soil Moisture</div>
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:600;">68% · Good</div>
+            </div>
+            <div style="flex:1;">
+              <div class="card-title">Weather</div>
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:600;">24°C · Cloudy</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">AI Recommendation</div>
+            <div style="font-size:13px; line-height:1.5;">Soil moisture is favourable — ideal to plough in the early morning. Estimated completion: ~1 day with tractor.</div>
+          </div>
+
+          <button class="btn btn-mpesa" onclick="go('pay')"><span>📲</span> Pay with M-Pesa</button>
+          <div class="center-note">Secure payment powered by M-Pesa</div>
+          <div style="height:8px"></div>
+          <button class="btn btn-ghost" onclick="go('measure')">Re-measure this farm</button>
+        </div>
+      </div>
+
+      <!-- MEASURING FLOW -->
+      <div class="screen" data-screen="measure">
+        <div class="header">
+          <div class="backbtn" onclick="go('home')">←</div>
+          <h3 style="font-size:16px;">Walk Your Boundary</h3>
+        </div>
+        <div class="map-wrap">
+          <svg id="measure-svg" class="map-svg" viewBox="0 0 320 320" height="320"></svg>
+          <div class="map-hint" id="measure-hint">Tap each corner of your farm as you walk it. Tap at least 3 points.</div>
+        </div>
+        <div class="readout">
+          <span id="point-count">0 points dropped</span>
+          <span id="live-area">0.00 acres</span>
+        </div>
+        <div style="height:14px"></div>
+        <button class="btn btn-primary" id="finish-btn" disabled onclick="finishBoundary()">Finish Boundary</button>
+        <div style="height:8px"></div>
+        <button class="btn btn-ghost" onclick="resetPoints()">Reset points</button>
+      </div>
+
+      <!-- RESULT -->
+      <div class="screen" data-screen="result">
+        <div class="header">
+          <div class="backbtn" onclick="go('measure')">←</div>
+          <h3 style="font-size:16px;">Boundary Complete</h3>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div class="card-title">Measured Area</div>
+          <div class="big-acres"><span id="result-acres">0.00</span><span class="unit">acres</span></div>
+          <div class="center-note">GPS boundary logged — saved to your farm records</div>
+        </div>
+        <div class="map-wrap"><svg id="result-map" class="map-svg" viewBox="0 0 320 220" height="160"></svg></div>
+        <div style="height:8px"></div>
+        <button class="btn btn-primary" onclick="go('cost')">See Ploughing Cost →</button>
+      </div>
+
+      <!-- COST -->
+      <div class="screen" data-screen="cost">
+        <div class="header">
+          <div class="backbtn" onclick="go('result')">←</div>
+          <h3 style="font-size:16px;">Ploughing Cost</h3>
+        </div>
+        <div class="card">
+          <div class="row"><span class="label">Area to plough</span><span class="value" id="cost-area">— acres</span></div>
+          <div class="row"><span class="label">Rate per acre</span><span class="value" id="rate-label">KSh 4,500</span></div>
+          <input type="range" min="3500" max="6000" step="100" value="4500" id="rate-slider" oninput="updateCost()">
+          <div class="row" style="border-bottom:none; padding-top:14px;">
+            <span class="label" style="font-weight:600; color:var(--ink);">Total estimate</span>
+            <span class="value" style="font-size:18px;" id="total-cost">KSh —</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Why this quote</div>
+          <div style="font-size:12.5px; line-height:1.5;">Priced per measured acre — not per tractor "session" — so you never pay for land that wasn't ploughed.</div>
+        </div>
+        <button class="btn btn-primary" onclick="applyToHome(); go('home')">Save to Farm Dashboard</button>
+      </div>
+
+      <!-- PAY -->
+      <div class="screen" data-screen="pay">
+        <div class="header">
+          <div class="backbtn" onclick="go('home')">←</div>
+          <h3 style="font-size:16px;">Pay with M-Pesa</h3>
+        </div>
+        <div class="card">
+          <div class="row"><span class="label">Farm area</span><span class="value" id="pay-area">—</span></div>
+          <div class="row"><span class="label">Rate</span><span class="value" id="pay-rate">—</span></div>
+          <div class="row"><span class="label">Amount due</span><span class="value" id="pay-amount" style="font-size:16px;">—</span></div>
+        </div>
+        <div class="card">
+          <div class="card-title">M-Pesa Number</div>
+          <input type="tel" id="mpesa-number" class="mpesa-input" placeholder="e.g. 0711 677 623" inputmode="tel" oninput="validatePhone()">
+          <div class="center-note" id="phone-error" style="text-align:left; color:#B5442E; display:none; margin-top:6px;">Enter a valid M-Pesa number.</div>
+        </div>
+        <button class="btn btn-mpesa" id="stk-btn" onclick="sendStkPush()">Confirm &amp; Send STK Push</button>
+      </div>
+
+      <div class="screen" data-screen="paying">
+        <div class="empty">
+          <div class="spinner" id="stk-spinner"></div>
+          <div id="stk-status">Sending payment request to <span id="paying-number" style="font-family:'IBM Plex Mono',monospace;">—</span>…</div>
+          <div class="center-note">Nothing is charged until you approve it below</div>
+          <button class="btn btn-mpesa" id="confirm-pin-btn" style="display:none; margin-top:18px;" onclick="confirmPin()">Simulate: Enter M-Pesa PIN ✓</button>
+        </div>
+      </div>
+
+      <div class="screen" data-screen="paid">
+        <div class="empty">
+          <div class="glyph" style="color:var(--mpesa)">✅</div>
+          <h3 style="color:var(--ink); font-size:19px;">Payment Received</h3>
+          <div class="card" style="text-align:left; margin-top:16px;">
+            <div class="row"><span class="label">Amount</span><span class="value" id="paid-amount">—</span></div>
+            <div class="row"><span class="label">M-Pesa Code</span><span class="value" id="mpesa-code">—</span></div>
+            <div class="row"><span class="label">Sent to</span><span class="value" id="paid-phone">—</span></div>
+            <div class="row"><span class="label">Farm area</span><span class="value" id="paid-area">—</span></div>
+          </div>
+          <button class="btn btn-primary" style="margin-top:10px;" onclick="go('home')">Back to Dashboard</button>
+        </div>
+      </div>
+
+      <!-- INSIGHTS -->
+      <div class="screen" data-screen="insights">
+        <div class="header"><h3 style="font-size:17px;">Insights</h3></div>
+        <div class="card">
+          <div class="card-title">Cost per season (KSh)</div>
+          <div class="bar-row"><span class="bar-label">Long rains</span><div class="bar-track"><div class="bar-fill" style="width:70%"></div></div><span class="bar-val">10,350</span></div>
+          <div class="bar-row"><span class="bar-label">Short rains</span><div class="bar-track"><div class="bar-fill" style="width:52%"></div></div><span class="bar-val">7,800</span></div>
+          <div class="bar-row"><span class="bar-label">This season</span><div class="bar-track"><div class="bar-fill" id="insight-bar" style="width:0%"></div></div><span class="bar-val" id="insight-val">—</span></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Savings vs. guesswork</div>
+          <div style="font-size:13px; line-height:1.5;">Farmers using exact GPS measurement avoid paying for the average 0.4 acres that guesswork typically overcounts each season.</div>
+        </div>
+      </div>
+
+      <!-- PAYMENTS -->
+      <div class="screen" data-screen="payments">
+        <div class="header"><h3 style="font-size:17px;">Payments</h3></div>
+        <div id="payments-empty" class="card empty">
+          <span class="glyph">💳</span>No payments yet.<br>Your M-Pesa receipts will appear here.
+        </div>
+        <div id="payments-list" style="display:none" class="card"></div>
+      </div>
+
+      <!-- PROFILE -->
+      <div class="screen" data-screen="profile">
+        <div class="header"><h3 style="font-size:17px;">Profile</h3></div>
+        <div class="card" style="display:flex; align-items:center; gap:12px;">
+          <div id="profile-initials" style="width:46px;height:46px;border-radius:50%;background:var(--crop);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:19px;">—</div>
+          <div>
+            <div style="font-weight:600;" id="profile-name">—</div>
+            <div class="eyebrow" id="profile-meta">—</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Farm Details</div>
+          <div class="row"><span class="label">Farm name</span><span class="value" id="profile-farmname">—</span></div>
+          <div class="row"><span class="label">Location</span><span class="value" id="profile-location">—</span></div>
+          <div class="row"><span class="label">Your estimate</span><span class="value" id="profile-sizeguess">—</span></div>
+          <div style="height:10px"></div>
+          <button class="btn btn-ghost" onclick="openEditProfile('profile')">Edit Details</button>
+        </div>
+        <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div class="card-title" style="margin-bottom:2px;">Appearance</div>
+            <div style="font-size:13px;" id="theme-label">Light mode</div>
+          </div>
+          <button class="btn btn-ghost" style="width:auto; padding:8px 16px;" onclick="toggleTheme()">Switch</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Saved Farm Records</div>
+          <div id="records-empty" class="empty" style="padding:20px 0;">No records yet — measure a farm to create your first one.</div>
+          <div id="records-list"></div>
+        </div>
+        <div class="center-note">Records give you proof of land size for loans, insurance and subsidy applications.</div>
+        <div style="height:10px"></div>
+        <button class="btn btn-ghost" onclick="handleLogout()">Log Out</button>
+      </div>
+
+    </div>
+
+    <div class="bottomnav">
+      <button class="navbtn active" data-tab="home" onclick="go('home')"><span class="navicon">🏠</span>Home</button>
+      <button class="navbtn" data-tab="insights" onclick="go('insights')"><span class="navicon">📊</span>Insights</button>
+      <button class="navbtn" data-tab="payments" onclick="go('payments')"><span class="navicon">💳</span>Payments</button>
+      <button class="navbtn" data-tab="profile" onclick="go('profile')"><span class="navicon">👤</span>Profile</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const METERS_PER_UNIT = 1.15;
+const ACRE_M2 = 4046.86;
+
+let state = {
+  points: [],       // {x,y} while measuring
+  closedPoints: [],
+  acres: 0,
+  rate: 4500,
+  cost: 0,
+  phone: '',
+  theme: 'light',
+  editReturnTo: 'profile',
+  stkTimers: [],    // pending STK-flow timeout ids, cleared on navigation away
+  records: [],      // {date, acres, cost}
+  payments: [],     // {date, amount, code, acres, phone}
+  farmer: {
+    phone:'', name:'', county:'Kirinyaga', town:'', farmName:'', sizeGuess:'', onboarded:false
+  }
+};
+
+const TOP_LEVEL_SCREENS = ['home','insights','payments','profile'];
+
+function go(screenName){
+  // Cancel any in-flight STK-push simulation if the user navigates away from
+  // the payment flow — prevents a stale timer firing "Payment Received" later.
+  if(screenName !== 'paying'){
+    state.stkTimers.forEach(id => clearTimeout(id));
+    state.stkTimers = [];
+  }
+
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const target = document.querySelector(`[data-screen="${screenName}"]`);
+  if(target) target.classList.add('active');
+
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.remove('active'));
+  const tabMap = {home:'home', insights:'insights', payments:'payments', profile:'profile'};
+  if(tabMap[screenName]){
+    document.querySelector(`.navbtn[data-tab="${tabMap[screenName]}"]`).classList.add('active');
+  }
+
+  // Bottom nav only makes sense on top-level tabs — hide it during flows
+  // (measuring, paying, onboarding, etc.) so a stray tap can't interrupt them.
+  document.querySelector('.bottomnav').classList.toggle('hidden', !TOP_LEVEL_SCREENS.includes(screenName));
+
+  if(screenName==='measure'){ resetPoints(); }
+  if(screenName==='cost'){ populateCost(); }
+  if(screenName==='pay'){ populatePay(); }
+  if(screenName==='paying'){ startStkFlow(); }
+  if(screenName==='payments'){ renderPayments(); }
+  if(screenName==='profile'){ renderRecords(); updateProfileDisplay(); }
+  if(screenName==='insights'){ renderInsights(); }
+  if(screenName==='home'){ updateHomeLocation(); }
+}
+
+// ---------- Theme ----------
+function toggleTheme(){
+  state.theme = state.theme === 'light' ? 'dark' : 'light';
+  document.getElementById('phone-frame').setAttribute('data-theme', state.theme);
+  document.getElementById('theme-toggle').textContent = state.theme === 'dark' ? '☀️' : '🌙';
+  const label = document.getElementById('theme-label');
+  if(label) label.textContent = state.theme === 'dark' ? 'Dark mode' : 'Light mode';
+}
+
+// ---------- Auth & onboarding ----------
+function handleLogin(){
+  const phone = document.getElementById('login-phone').value.trim();
+  const pin = document.getElementById('login-pin').value.trim();
+  const errorEl = document.getElementById('login-error');
+  if(!phone || pin.length < 4){
+    errorEl.style.display = 'block';
+    return;
+  }
+  errorEl.style.display = 'none';
+  state.phone = phone;
+  state.farmer.phone = formatPhone(phone);
+  document.getElementById('login-pin').value = '';
+  if(state.farmer.onboarded){
+    go('home');
+  } else {
+    go('onboarding');
+  }
+}
+
+function saveOnboarding(){
+  state.farmer.name = document.getElementById('ob-name').value.trim() || 'Farmer';
+  state.farmer.county = document.getElementById('ob-county').value;
+  state.farmer.town = document.getElementById('ob-town').value.trim();
+  state.farmer.farmName = document.getElementById('ob-farmname').value.trim();
+  state.farmer.sizeGuess = document.getElementById('ob-sizeguess').value.trim();
+  state.farmer.onboarded = true;
+  go('home');
+}
+
+function handleLogout(){
+  // Log out without erasing the farmer's saved details — on.boarded stays true,
+  // so logging back in with any phone/PIN returns straight to their dashboard.
+  document.getElementById('login-phone').value = state.farmer.phone.replace(/\D/g,'');
+  document.getElementById('login-pin').value = '';
+  go('login');
+}
+
+function updateHomeLocation(){
+  const f = state.farmer;
+  const locBits = [f.town, f.county ? f.county+' County' : ''].filter(Boolean).join(', ');
+  document.getElementById('home-location').innerHTML =
+    (locBits || 'Kenya') + ' · <em style="font-style:italic; color:var(--crop);">Measure. Estimate. Farm Smarter.</em>';
+  document.getElementById('home-farmname').textContent = f.farmName ? f.farmName : '';
+}
+
+function updateProfileDisplay(){
+  const f = state.farmer;
+  const initials = (f.name || 'F').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+  document.getElementById('profile-initials').textContent = initials || 'F';
+  document.getElementById('profile-name').textContent = f.name || 'Farmer';
+  document.getElementById('profile-meta').textContent = `${f.county || '—'} County · ${f.phone || '—'}`;
+  document.getElementById('profile-farmname').textContent = f.farmName || '—';
+  document.getElementById('profile-location').textContent = [f.town, f.county].filter(Boolean).join(', ') || '—';
+  document.getElementById('profile-sizeguess').textContent = f.sizeGuess || '—';
+}
+
+// ---------- Edit profile (personalization) ----------
+function openEditProfile(returnTo){
+  state.editReturnTo = returnTo || 'profile';
+  const f = state.farmer;
+  document.getElementById('ep-name').value = f.name || '';
+  document.getElementById('ep-phone').value = f.phone || state.phone || '';
+  document.getElementById('ep-county').value = f.county || 'Kirinyaga';
+  document.getElementById('ep-town').value = f.town || '';
+  document.getElementById('ep-farmname').value = f.farmName || '';
+  document.getElementById('ep-sizeguess').value = f.sizeGuess || '';
+  go('edit-profile');
+}
+
+function saveEditProfile(){
+  const f = state.farmer;
+  f.name = document.getElementById('ep-name').value.trim() || f.name || 'Farmer';
+  f.phone = formatPhone(document.getElementById('ep-phone').value.trim() || f.phone);
+  f.county = document.getElementById('ep-county').value;
+  f.town = document.getElementById('ep-town').value.trim();
+  f.farmName = document.getElementById('ep-farmname').value.trim();
+  f.sizeGuess = document.getElementById('ep-sizeguess').value.trim();
+  go(state.editReturnTo || 'profile');
+}
+
+// ---------- Measuring ----------
+function resetPoints(){
+  state.points = [];
+  const svg = document.getElementById('measure-svg');
+  svg.innerHTML = '';
+  document.getElementById('point-count').textContent = '0 points dropped';
+  document.getElementById('live-area').textContent = '0.00 acres';
+  document.getElementById('finish-btn').disabled = true;
+  document.getElementById('measure-hint').textContent = 'Tap each corner of your farm as you walk it. Tap at least 3 points.';
+  svg.onclick = handleMapClick;
+}
+
+function handleMapClick(e){
+  const svg = document.getElementById('measure-svg');
+  const rect = svg.getBoundingClientRect();
+  const vb = svg.viewBox.baseVal;
+  const x = ((e.clientX - rect.left) / rect.width) * vb.width;
+  const y = ((e.clientY - rect.top) / rect.height) * vb.height;
+  state.points.push({x,y});
+  redrawMeasure();
+}
+
+function redrawMeasure(){
+  const svg = document.getElementById('measure-svg');
+  svg.innerHTML = '';
+  const pts = state.points;
+  if(pts.length > 1){
+    const path = pts.map(p=>`${p.x},${p.y}`).join(' ');
+    const poly = document.createElementNS('http://www.w3.org/2000/svg','polyline');
+    poly.setAttribute('points', path);
+    poly.setAttribute('class','boundary-line');
+    poly.setAttribute('fill','none');
+    svg.appendChild(poly);
+  }
+  pts.forEach((p,i)=>{
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',6);
+    c.setAttribute('class','pointdot');
+    svg.appendChild(c);
+    const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',p.x); t.setAttribute('y',p.y-10);
+    t.setAttribute('fill','#F5F0E1'); t.setAttribute('font-size','9'); t.setAttribute('text-anchor','middle');
+    t.setAttribute('font-family','IBM Plex Mono, monospace');
+    t.textContent = i+1;
+    svg.appendChild(t);
+  });
+  document.getElementById('point-count').textContent = `${pts.length} point${pts.length===1?'':'s'} dropped`;
+  document.getElementById('finish-btn').disabled = pts.length < 3;
+
+  if(pts.length >= 3){
+    const preview = shoelaceAcres([...pts, pts[0]]);
+    document.getElementById('live-area').textContent = preview.toFixed(2)+' acres (preview)';
+  } else {
+    document.getElementById('live-area').textContent = '0.00 acres';
+  }
+}
+
+function shoelaceAcres(pts){
+  let sum = 0;
+  for(let i=0;i<pts.length-1;i++){
+    sum += pts[i].x*pts[i+1].y - pts[i+1].x*pts[i].y;
+  }
+  const areaUnits = Math.abs(sum)/2;
+  const areaM2 = areaUnits * METERS_PER_UNIT * METERS_PER_UNIT;
+  return areaM2 / ACRE_M2;
+}
+
+function finishBoundary(){
+  const closed = [...state.points, state.points[0]];
+  state.closedPoints = closed;
+  state.acres = shoelaceAcres(closed);
+  document.getElementById('measure-hint').textContent = 'Boundary closed. Review your area on the next screen.';
+
+  // draw result map
+  drawStaticPolygon('result-map', closed, 320, 220);
+  drawStaticPolygon('mini-map', closed, 320, 200);
+  document.getElementById('result-acres').textContent = state.acres.toFixed(2);
+  document.getElementById('mini-area').textContent = state.acres.toFixed(2)+' acres';
+
+  // save record
+  state.records.push({date: todayStr(), acres: state.acres, cost: null});
+
+  go('result');
+}
+
+function drawStaticPolygon(svgId, pts, w, h){
+  const svg = document.getElementById(svgId);
+  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  svg.innerHTML = '';
+  const path = pts.map(p=>`${p.x},${p.y}`).join(' ');
+  const poly = document.createElementNS('http://www.w3.org/2000/svg','polyline');
+  poly.setAttribute('points', path);
+  poly.setAttribute('class','boundary-line');
+  svg.appendChild(poly);
+  pts.slice(0,-1).forEach(p=>{
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',4.5);
+    c.setAttribute('class','pointdot');
+    svg.appendChild(c);
+  });
+}
+
+// ---------- Cost ----------
+function populateCost(){
+  document.getElementById('cost-area').textContent = state.acres.toFixed(2)+' acres';
+  document.getElementById('rate-slider').value = state.rate;
+  updateCost();
+}
+function updateCost(){
+  state.rate = parseInt(document.getElementById('rate-slider').value);
+  state.cost = Math.round(state.acres * state.rate);
+  document.getElementById('rate-label').textContent = 'KSh '+state.rate.toLocaleString();
+  document.getElementById('total-cost').textContent = 'KSh '+state.cost.toLocaleString();
+}
+function applyToHome(){
+  document.getElementById('home-empty').style.display='none';
+  document.getElementById('home-filled').style.display='block';
+  document.getElementById('home-cost').textContent = 'KSh '+state.cost.toLocaleString();
+  document.getElementById('home-cost-note').textContent = `${state.acres.toFixed(2)} acres × KSh ${state.rate.toLocaleString()}/acre`;
+  if(state.records.length){ state.records[state.records.length-1].cost = state.cost; }
+}
+
+// ---------- Payment ----------
+function populatePay(){
+  document.getElementById('pay-area').textContent = state.acres.toFixed(2)+' acres';
+  document.getElementById('pay-rate').textContent = 'KSh '+state.rate.toLocaleString()+'/acre';
+  document.getElementById('pay-amount').textContent = 'KSh '+(state.cost || 0).toLocaleString();
+  document.getElementById('mpesa-number').value = state.phone || '';
+  document.getElementById('phone-error').style.display = 'none';
+  document.getElementById('mpesa-number').classList.remove('invalid');
+}
+
+function validatePhone(){
+  const input = document.getElementById('mpesa-number');
+  const digits = input.value.replace(/\D/g,'');
+  const valid = digits.length >= 9;
+  input.classList.toggle('invalid', input.value.length>0 && !valid);
+  document.getElementById('phone-error').style.display = (input.value.length>0 && !valid) ? 'block' : 'none';
+  return valid;
+}
+
+function sendStkPush(){
+  const input = document.getElementById('mpesa-number');
+  if(!input.value.trim() || !validatePhone()){
+    input.classList.add('invalid');
+    document.getElementById('phone-error').style.display = 'block';
+    input.focus();
+    return;
+  }
+  state.phone = input.value.trim();
+  document.getElementById('paying-number').textContent = formatPhone(state.phone);
+  go('paying');
+}
+
+function formatPhone(raw){
+  const digits = raw.replace(/\D/g,'');
+  if(digits.startsWith('254')) return '+'+digits;
+  if(digits.startsWith('0')) return '+254 '+digits.slice(1);
+  return '+254 '+digits;
+}
+
+function startStkFlow(){
+  const status = document.getElementById('stk-status');
+  const spinner = document.getElementById('stk-spinner');
+  const confirmBtn = document.getElementById('confirm-pin-btn');
+  confirmBtn.style.display = 'none';
+  confirmBtn.disabled = false;
+  spinner.style.display = 'block';
+  status.innerHTML = `Sending payment request to <span style="font-family:'IBM Plex Mono',monospace;">${document.getElementById('paying-number').textContent}</span>…`;
+  const id = setTimeout(()=>{
+    spinner.style.display = 'none';
+    status.textContent = 'Prompt sent — waiting for you to enter your M-Pesa PIN on your phone.';
+    confirmBtn.style.display = 'block';
+  }, 1400);
+  state.stkTimers.push(id);
+}
+
+function confirmPin(){
+  const status = document.getElementById('stk-status');
+  const spinner = document.getElementById('stk-spinner');
+  const confirmBtn = document.getElementById('confirm-pin-btn');
+  // Guard against double-tap firing two completions for one payment.
+  if(confirmBtn.disabled) return;
+  confirmBtn.disabled = true;
+  confirmBtn.style.display = 'none';
+  spinner.style.display = 'block';
+  status.textContent = 'Confirming payment with Safaricom…';
+  const id = setTimeout(()=>completePayment(), 1300);
+  state.stkTimers.push(id);
+}
+
+function completePayment(){
+  const code = 'Q' + Math.random().toString(36).slice(2,10).toUpperCase();
+  const amount = state.cost || 0;
+  state.payments.push({date: todayStr(), amount, code, acres: state.acres, phone: formatPhone(state.phone||'')});
+  document.getElementById('paid-amount').textContent = 'KSh '+amount.toLocaleString();
+  document.getElementById('mpesa-code').textContent = code;
+  document.getElementById('paid-phone').textContent = formatPhone(state.phone||'');
+  document.getElementById('paid-area').textContent = state.acres.toFixed(2)+' acres';
+  go('paid');
+}
+
+// ---------- Lists ----------
+function renderPayments(){
+  const list = document.getElementById('payments-list');
+  const empty = document.getElementById('payments-empty');
+  if(!state.payments.length){ empty.style.display='block'; list.style.display='none'; return; }
+  empty.style.display='none'; list.style.display='block';
+  list.innerHTML = state.payments.slice().reverse().map(p=>`
+    <div class="record-item">
+      <div><strong>KSh ${p.amount.toLocaleString()}</strong><br><span class="eyebrow">${p.date} · ${p.acres.toFixed(2)} acres · ${p.phone||''}</span></div>
+      <span class="chip">${p.code}</span>
+    </div>`).join('');
+}
+function renderRecords(){
+  const list = document.getElementById('records-list');
+  const empty = document.getElementById('records-empty');
+  if(!state.records.length){ empty.style.display='block'; list.innerHTML=''; return; }
+  empty.style.display='none';
+  list.innerHTML = state.records.slice().reverse().map(r=>`
+    <div class="record-item">
+      <div><strong>${r.acres.toFixed(2)} acres</strong><br><span class="eyebrow">${r.date}</span></div>
+      <span class="chip">${r.cost ? 'KSh '+r.cost.toLocaleString() : 'unpriced'}</span>
+    </div>`).join('');
+}
+function renderInsights(){
+  if(state.cost){
+    document.getElementById('insight-val').textContent = state.cost.toLocaleString();
+    document.getElementById('insight-bar').style.width = Math.min(100, (state.cost/15000)*100)+'%';
+  }
+}
+function todayStr(){
+  return new Date().toLocaleDateString('en-KE', {day:'numeric', month:'short', year:'numeric'});
+}
+</script>
+</body>
+</html>
